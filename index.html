@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>INTRIX Energy Savings Calculator</title>
 <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.7/Recharts.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Mulish','Nunito',sans-serif;background:#f5f5f5;min-height:100vh;display:flex;justify-content:center;padding:24px 12px;}
@@ -282,10 +282,11 @@ function renderInputs(){
   }
 
   const canCalc=state.inclC||(isHotel&&state.inclH);
-  const ctaBtn=el("button",{class:"cta",disabled:canCalc?"":"disabled",onClick:()=>{
+  const ctaBtn=el("button",{class:`cta${canCalc?"":" disabled-btn"}`,onClick:()=>{
     if(!canCalc) return;
     setState({step: saved||state.form.name?"results":"gate"});
   }},"Calculate Savings");
+  if(!canCalc) ctaBtn.disabled=true;
   sizeCol.appendChild(ctaBtn);
   grid.appendChild(sizeCol);
   wrap.appendChild(grid);
