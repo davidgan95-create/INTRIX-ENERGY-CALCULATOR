@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>INTRIX Energy Savings Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Mulish','Nunito',sans-serif;background:#f5f5f5;min-height:100vh;display:flex;justify-content:center;padding:24px 12px;}
+.wrap{width:100%;max-width:720px;}
+h2{font-size:22px;font-weight:700;margin-bottom:4px;}
+.sub{font-size:14px;color:#7A7975;margin-bottom:24px;}
+.card{background:#fff;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07);}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.gridf{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;}
+label.lbl{display:flex;align-items:center;gap:6px;font-size:13px;color:#7A7975;font-weight:600;margin-bottom:8px;}
+.btn-sel{padding:8px 12px;border-radius:6px;font-size:14px;font-family:inherit;cursor:pointer;text-align:left;transition:all .15s;width:100%;}
+.btn-sel.active{border:2px solid #EA6C1A;background:#FEF0E6;color:#A84910;font-weight:600;}
+.btn-sel.inactive{border:1px solid #ddd;background:#fff;color:#333;font-weight:400;}
+.tog{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:6px;font-size:14px;cursor:pointer;transition:all .15s;user-select:none;}
+.tog.blue.active{border:2px solid #1D6FA4;background:#EBF5FF;color:#0D3F5E;font-weight:600;}
+.tog.red.active{border:2px solid #D94F2B;background:#FEF0EB;color:#8C2810;font-weight:600;}
+.tog.inactive{border:1px solid #ddd;background:#fff;color:#333;font-weight:400;}
+.badge{margin-left:auto;font-size:10px;color:#fff;border-radius:99px;padding:1px 7px;}
+.cta{width:100%;padding:10px;border-radius:6px;background:#EA6C1A;color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s;margin-top:8px;}
+.cta:hover{opacity:.88;}
+.cta:disabled{background:#ccc;cursor:not-allowed;}
+select,input[type=text],input[type=tel]{width:100%;padding:9px 12px;border-radius:6px;font-size:14px;border:1px solid #ddd;font-family:inherit;outline:none;}
+.stat{background:#fff;border-radius:6px;padding:14px;}
+.stat p.lbl2{font-size:11px;color:#7A7975;margin-bottom:3px;}
+.stat p.val{font-size:18px;font-weight:600;margin:0;}
+.stat p.sub{font-size:10px;color:#7A7975;margin-top:3px;}
+.sec-hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;margin-bottom:12px;}
+.esg{background:#E1F5EE;border:0.5px solid #9FE1CB;border-radius:8px;padding:16px;margin-top:10px;}
+.esg-card{background:rgba(255,255,255,0.65);border-radius:6px;padding:12px;}
+.pill{font-size:11px;background:rgba(255,255,255,0.7);border:1px solid #9FE1CB;border-radius:99px;padding:2px 10px;color:#085041;font-weight:500;}
+.debug{font-size:11px;color:#555;background:#f5f5f5;padding:8px;border-radius:6px;margin-top:8px;word-break:break-all;white-space:pre-wrap;}
+.back-btn{padding:10px;border-radius:6px;background:transparent;color:#7A7975;border:1px solid #ddd;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;width:100%;}
+.range-wrap{margin-bottom:4px;}
+.range-labels{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.range-val{font-size:20px;font-weight:700;color:#EA6C1A;}
+.range-unit{font-size:12px;font-weight:500;}
+.range-edge{font-size:12px;color:#7A7975;}
+input[type=range]{width:100%;accent-color:#EA6C1A;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Energy Savings Calculator</h2>
+  <p class="sub">Estimate your energy savings with INTRIX ONE solutions</p>
+  <div id="app"></div>
+</div>
+
+<script>
+const FORM_URL="https://docs.google.com/forms/d/e/1FAIpQLSc1VW97yb7Fnk4ERSdZJEAqY5-iIZ-CeThU9_FkxMsJMBYHIw/formResponse";
+const FIELDS={name:"entry.367575537",position:"entry.409032244",organisation:"entry.1605251545",phone:"entry.390558547",buildingType:"entry.130227221",buildingAge:"entry.1079429000",rooms:"entry.1478375158",buildingSize:"entry.1456290686",systems:"entry.330952916",monthlyChillerSaving:"entry.853009708",monthlyHPSaving:"entry.353332910",totalMonthlySaving:"entry.1883157796",total10YrSaving:"entry.862272461"};
+
+const AGES=[
+  {label:"5 – 10 years",value:"5-10",kwrt:1.0,af:1.0},
+  {label:"11 – 15 years",value:"11-15",kwrt:1.1,af:1.1},
+  {label:"16 – 20 years",value:"16-20",kwrt:1.25,af:1.21},
+  {label:"21 – 30 years",value:"21-30",kwrt:1.35,af:1.331},
+  {label:"> 30 years",value:">30",kwrt:1.45,af:1.464},
+];
+const TYPES=[{l:"Hotel",h:24},{l:"Office",h:12},{l:"Mall",h:12}];
+const SIZES=Array.from({length:49},(_, i)=>20000+(i*10000));
+
+const IKW=0.54,EK=12.73,ICK=9.71,CO2F=0.42,DAYS=30,M10=120;
+const HPP=75.47,HPF=4000,HPI=66.39,HPCO2=28.59,TREE=21;
+
+function toRT(r){return Math.ceil(r*1.5/50)*50;}
+function toRTS(s){return Math.round(s/20000*100/50)*50;}
+function trees(kg){return Math.round(kg/TREE);}
+function fmt(n){return Math.round(n).toLocaleString();}
+function fmtD(n,d=1){return n.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});}
+
+function calcC(rt,h,kwrt){
+  const eM=(rt*h*kwrt*EK)+4000,iM=rt*h*ICK;
+  const co2=(rt*h*kwrt*CO2F*DAYS)-(rt*h*IKW*CO2F*DAYS);
+  return{eM,iM,save:eM-iM,s10:(eM-iM)*M10,co2,co2_10:co2*M10};
+}
+function calcH(rooms,af){
+  const eM=((rooms*HPP)+HPF)*af,iM=rooms*HPI;
+  const co2=(rooms*HPCO2)*af;
+  return{eM,iM,save:eM-iM,s10:(eM-iM)*M10,co2,co2_10:co2*M10};
+}
+
+// STATE
+let state={
+  bt:TYPES[0],ba:AGES[0],sz:20000,rooms:300,
+  inclC:true,inclH:false,
+  step:"inputs",
+  form:{name:"",position:"",org:"",phone:""},
+  submitting:false,submitErr:"",debug:"",
+};
+const saved=JSON.parse(sessionStorage.getItem("intrix_user")||"null");
+if(saved) state.form=saved;
+
+function setState(patch){state={...state,...patch};render();}
+
+function getRT(){return state.bt.l==="Hotel"?toRT(state.rooms):toRTS(state.sz);}
+function getC(){return calcC(getRT(),state.bt.h,state.ba.kwrt);}
+function getH(){return calcH(state.rooms,state.ba.af);}
+function showC(){return state.inclC;}
+function showH(){return state.bt.l==="Hotel"&&state.inclH;}
+function totM(){return (showC()?getC().save:0)+(showH()?getH().save:0);}
+function tot10(){return (showC()?getC().s10:0)+(showH()?getH().s10:0);}
+function totCO2M(){return (showC()?getC().co2:0)+(showH()?getH().co2:0);}
+function totCO2_10(){return (showC()?getC().co2_10:0)+(showH()?getH().co2_10:0);}
+
+function el(tag,attrs,...children){
+  const e=document.createElement(tag);
+  for(const[k,v] of Object.entries(attrs||{})){
+    if(k==="class")e.className=v;
+    else if(k.startsWith("on"))e.addEventListener(k.slice(2).toLowerCase(),v);
+    else e.setAttribute(k,v);
+  }
+  for(const c of children.flat()){
+    if(c==null) continue;
+    e.appendChild(typeof c==="string"?document.createTextNode(c):c);
+  }
+  return e;
+}
+
+function statCard(label,value,sub,color,bg="#fff",borderColor=null){
+  const d=el("div",{class:"stat",style:`border-left:3px solid ${borderColor||color};background:${bg};`});
+  d.appendChild(el("p",{class:"lbl2"},label));
+  d.appendChild(el("p",{class:"val",style:`color:${color}`},value));
+  if(sub) d.appendChild(el("p",{class:"sub"},sub));
+  return d;
+}
+
+function esgBlock(co2M,co2_10){
+  const items=[
+    {l:"CO₂ Saved Annually",v:fmtD(co2M*12/1000),s:"tonnes CO₂/year",tree:false},
+    {l:"CO₂ Saved (10 Years)",v:fmtD(co2_10/1000),s:"cumulative tonnes",tree:false},
+    {l:"Equiv. Trees (Annual)",v:fmt(trees(co2M*12)),s:"trees/year",tree:true},
+    {l:"Equiv. Trees (10 Years)",v:fmt(trees(co2_10)),s:"cumulative",tree:true},
+  ];
+  const grid=el("div",{style:"display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;"});
+  items.forEach(it=>{
+    const c=el("div",{class:"esg-card"});
+    c.appendChild(el("p",{style:"font-size:10px;color:#0F6E56;margin-bottom:3px;"},it.l));
+    const vrow=el("div",{style:"display:flex;align-items:baseline;gap:4px;"});
+    if(it.tree) vrow.appendChild(el("span",{},"🌳"));
+    vrow.appendChild(el("p",{style:"font-size:18px;font-weight:600;color:#085041;margin:0;"},it.v));
+    c.appendChild(vrow);
+    c.appendChild(el("p",{style:"font-size:10px;color:#0F6E56;opacity:.8;margin-top:2px;"},it.s));
+    grid.appendChild(c);
+  });
+  const wrap=el("div",{class:"esg"});
+  const hdr=el("div",{style:"display:flex;align-items:center;gap:8px;margin-bottom:10px;"});
+  hdr.appendChild(el("span",{},"🌿"));
+  hdr.appendChild(el("p",{style:"font-size:13px;font-weight:700;color:#085041;margin:0;"},"ESG Impact"));
+  wrap.appendChild(hdr);
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function renderBarChart(containerId,data,color){
+  const container=document.getElementById(containerId);
+  if(!container) return;
+  container.innerHTML="";
+  const W=container.offsetWidth||400,H=180;
+  const pad={top:10,right:20,bottom:30,left:60};
+  const iW=W-pad.left-pad.right,iH=H-pad.top-pad.bottom;
+  const maxV=Math.max(...data.map(d=>d.val))*1.15;
+  const barW=Math.min(60,iW/data.length*0.5);
+  const gap=(iW-barW*data.length)/(data.length+1);
+
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("width","100%");svg.setAttribute("height",H);svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+
+  // grid lines
+  [0,.25,.5,.75,1].forEach(t=>{
+    const y=pad.top+iH*(1-t);
+    const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1",pad.left);line.setAttribute("x2",pad.left+iW);
+    line.setAttribute("y1",y);line.setAttribute("y2",y);
+    line.setAttribute("stroke","rgba(128,128,128,0.15)");line.setAttribute("stroke-dasharray","3 3");
+    svg.appendChild(line);
+    const txt=document.createElementNS("http://www.w3.org/2000/svg","text");
+    txt.setAttribute("x",pad.left-4);txt.setAttribute("y",y+4);
+    txt.setAttribute("text-anchor","end");txt.setAttribute("font-size","9");txt.setAttribute("fill","#888");
+    txt.textContent="RM "+(maxV*t/1e6).toFixed(1)+"M";
+    svg.appendChild(txt);
+  });
+
+  data.forEach((d,i)=>{
+    const x=pad.left+gap+(barW+gap)*i;
+    const bH=(d.val/maxV)*iH;
+    const y=pad.top+iH-bH;
+    const fill=i===1?color:"#888780";
+    const rect=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x",x);rect.setAttribute("y",y);
+    rect.setAttribute("width",barW);rect.setAttribute("height",bH);
+    rect.setAttribute("fill",fill);rect.setAttribute("rx","4");
+    svg.appendChild(rect);
+    const lbl=document.createElementNS("http://www.w3.org/2000/svg","text");
+    lbl.setAttribute("x",x+barW/2);lbl.setAttribute("y",pad.top+iH+18);
+    lbl.setAttribute("text-anchor","middle");lbl.setAttribute("font-size","10");lbl.setAttribute("fill","#888");
+    lbl.textContent=d.name;
+    svg.appendChild(lbl);
+  });
+  container.appendChild(svg);
+}
+
+function miniChart(id,data,color){
+  const div=el("div",{id,style:"width:100%;height:180px;"});
+  setTimeout(()=>renderBarChart(id,data,color),50);
+  return div;
+}
+
+function renderInputs(){
+  const isHotel=state.bt.l==="Hotel";
+  const wrap=el("div",{class:"card"});
+  const grid=el("div",{class:"grid3"});
+
+  // Building Type
+  const typeCol=el("div",{});
+  typeCol.appendChild(el("label",{class:"lbl"},"🏢 Building Type"));
+  const typeStack=el("div",{style:"display:flex;flex-direction:column;gap:6px;"});
+  TYPES.forEach(t=>{
+    const b=el("button",{class:`btn-sel ${state.bt.l===t.l?"active":"inactive"}`,onClick:()=>setState({bt:t,inclH:false,inclC:true,step:"inputs"})},t.l);
+    typeStack.appendChild(b);
+  });
+  typeCol.appendChild(typeStack);
+  grid.appendChild(typeCol);
+
+  // Building Age
+  const ageCol=el("div",{});
+  ageCol.appendChild(el("label",{class:"lbl"},"⚡ Building Age"));
+  const ageStack=el("div",{style:"display:flex;flex-direction:column;gap:6px;"});
+  AGES.forEach(a=>{
+    const b=el("button",{class:`btn-sel ${state.ba.value===a.value?"active":"inactive"}`,onClick:()=>setState({ba:a})},a.label);
+    ageStack.appendChild(b);
+  });
+  ageCol.appendChild(ageStack);
+  grid.appendChild(ageCol);
+
+  // Size/Rooms + System
+  const sizeCol=el("div",{style:"display:flex;flex-direction:column;gap:12px;"});
+  const sizeLbl=el("label",{class:"lbl"},`📐 ${isHotel?"Number Of Rooms":"Building Gross Floor Area"}`);
+  sizeCol.appendChild(sizeLbl);
+
+  if(isHotel){
+    const rw=el("div",{class:"range-wrap"});
+    const rl=el("div",{class:"range-labels"});
+    rl.appendChild(el("span",{class:"range-edge"},"100"));
+    const rv=el("span",{class:"range-val"},`${state.rooms} `);
+    rv.appendChild(el("span",{class:"range-unit"},"rooms"));
+    rl.appendChild(rv);
+    rl.appendChild(el("span",{class:"range-edge"},"1500"));
+    rw.appendChild(rl);
+    const slider=el("input",{type:"range",min:"100",max:"1500",step:"10",value:state.rooms,onInput:e=>setState({rooms:parseInt(e.target.value)})});
+    rw.appendChild(slider);
+    sizeCol.appendChild(rw);
+  } else {
+    const sel=el("select",{onChange:e=>setState({sz:parseInt(e.target.value)})});
+    SIZES.forEach(s=>{
+      const o=el("option",{value:s},s.toLocaleString()+" sq ft");
+      if(s===state.sz) o.setAttribute("selected","");
+      sel.appendChild(o);
+    });
+    sizeCol.appendChild(sel);
+  }
+
+  if(isHotel){
+    const sysLbl=el("label",{class:"lbl",style:"margin-top:4px;"},"⚙️ System Selection");
+    sizeCol.appendChild(sysLbl);
+    const ct=el("div",{class:`tog blue ${state.inclC?"active":"inactive"}`,onClick:()=>setState({inclC:!state.inclC})});
+    ct.appendChild(el("span",{},"❄️ Chiller"));
+    if(state.inclC) ct.appendChild(el("span",{class:"badge",style:"background:#1D6FA4;"},"Selected"));
+    sizeCol.appendChild(ct);
+    const ht=el("div",{class:`tog red ${state.inclH?"active":"inactive"}`,onClick:()=>setState({inclH:!state.inclH})});
+    ht.appendChild(el("span",{},"🔥 Hot Water System"));
+    if(state.inclH) ht.appendChild(el("span",{class:"badge",style:"background:#D94F2B;"},"Selected"));
+    sizeCol.appendChild(ht);
+  }
+
+  const canCalc=state.inclC||(isHotel&&state.inclH);
+  const ctaBtn=el("button",{class:"cta",disabled:canCalc?"":"disabled",onClick:()=>{
+    if(!canCalc) return;
+    setState({step: saved||state.form.name?"results":"gate"});
+  }},"Calculate Savings");
+  sizeCol.appendChild(ctaBtn);
+  grid.appendChild(sizeCol);
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function renderGate(){
+  const wrap=el("div",{class:"card",style:"max-width:440px;margin:0 auto;"});
+  const hdr=el("div",{style:"text-align:center;margin-bottom:20px;"});
+  hdr.appendChild(el("div",{style:"width:48px;height:48px;border-radius:50%;background:#EA6C1A;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:22px;"},"🌿"));
+  hdr.appendChild(el("p",{style:"font-size:16px;font-weight:700;margin-bottom:4px;"},"Almost there!"));
+  hdr.appendChild(el("p",{style:"font-size:13px;color:#7A7975;"},"Enter your details to unlock your personalised savings report."));
+  wrap.appendChild(hdr);
+
+  const fields=[
+    {key:"name",icon:"👤",label:"Full Name",placeholder:"e.g. Ahmad bin Ali",type:"text"},
+    {key:"position",icon:"💼",label:"Position / Title",placeholder:"e.g. Chief Engineer",type:"text"},
+    {key:"org",icon:"🏨",label:"Organisation / Hotel",placeholder:"e.g. Grand Hyatt KL",type:"text"},
+    {key:"phone",icon:"📱",label:"Mobile Phone Number",placeholder:"e.g. 012-3456789",type:"tel"},
+  ];
+  fields.forEach(f=>{
+    const div=el("div",{style:"margin-bottom:14px;"});
+    div.appendChild(el("label",{class:"lbl"},`${f.icon} ${f.label}`));
+    const inp=el("input",{type:f.type,placeholder:f.placeholder,value:state.form[f.key]||"",onInput:e=>setState({form:{...state.form,[f.key]:e.target.value}})});
+    div.appendChild(inp);
+    wrap.appendChild(div);
+  });
+
+  if(state.submitErr) wrap.appendChild(el("p",{style:"font-size:12px;color:#D94F2B;margin-bottom:8px;"},state.submitErr));
+  if(state.debug) wrap.appendChild(el("div",{class:"debug"},state.debug));
+
+  const btns=el("div",{class:"grid2",style:"margin-top:8px;"});
+  btns.appendChild(el("button",{class:"back-btn",onClick:()=>setState({step:"inputs",submitErr:"",debug:""})},"← Back"));
+  const sb=el("button",{class:"cta",style:"margin-top:0;",disabled:state.submitting?"":undefined,onClick:handleSubmit},state.submitting?"Submitting…":"View My Results →");
+  btns.appendChild(sb);
+  wrap.appendChild(btns);
+  return wrap;
+}
+
+async function handleSubmit(){
+  setState({debug:"🔄 Validating..."});
+  const f=state.form;
+  if(!f.name.trim()||!f.position.trim()||!f.org.trim()||!f.phone.trim()){
+    setState({submitErr:"Please fill in all fields.",debug:"❌ Empty fields detected."});return;
+  }
+  setState({submitting:true,submitErr:"",debug:"📤 Sending data..."});
+  const cR=getC(),hR=getH();
+  try{
+    const body=new URLSearchParams();
+    body.append(FIELDS.name,f.name.trim());
+    body.append(FIELDS.position,f.position.trim());
+    body.append(FIELDS.organisation,f.org.trim());
+    body.append(FIELDS.phone,f.phone.trim());
+    body.append(FIELDS.buildingType,state.bt.l);
+    body.append(FIELDS.buildingAge,state.ba.label);
+    body.append(FIELDS.rooms,state.bt.l==="Hotel"?state.rooms:"N/A");
+    body.append(FIELDS.buildingSize,state.bt.l==="Hotel"?"N/A":state.sz);
+    body.append(FIELDS.systems,[showC()?"Chiller":null,showH()?"Heat Pump":null].filter(Boolean).join("+"));
+    body.append(FIELDS.monthlyChillerSaving,showC()?Math.round(cR.save):0);
+    body.append(FIELDS.monthlyHPSaving,showH()?Math.round(hR.save):0);
+    body.append(FIELDS.totalMonthlySaving,Math.round(totM()));
+    body.append(FIELDS.total10YrSaving,Math.round(tot10()));
+    const res=await fetch(FORM_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body.toString()});
+    sessionStorage.setItem("intrix_user",JSON.stringify({name:f.name.trim(),position:f.position.trim(),org:f.org.trim(),phone:f.phone.trim()}));
+    setState({debug:"✅ Submitted! Loading results...",submitting:false});
+    setTimeout(()=>setState({step:"results",debug:""}),1500);
+  }catch(e){
+    setState({debug:`❌ ${e.name}: ${e.message}`,submitErr:e.name+": "+e.message,submitting:false});
+  }
+}
+
+function renderResults(){
+  const f=state.form; const cR=getC(); const hR=getH();
+  const isHotel=state.bt.l==="Hotel";
+  const frag=document.createDocumentFragment();
+
+  // Header banner
+  const banner=el("div",{style:"background:#E1F5EE;border:0.5px solid #9FE1CB;border-radius:8px;padding:12px 14px;margin-bottom:16px;"});
+  const brow=el("div",{style:"display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;"});
+  const binfo=el("div",{});
+  binfo.appendChild(el("p",{style:"font-size:13px;color:#085041;margin-bottom:6px;"},`Results for `+el("strong",{},f.name).outerHTML+` · ${f.position} · ${f.org}`));
+  const pills=el("div",{style:"display:flex;flex-wrap:wrap;gap:6px;"});
+  [`🏢 ${state.bt.l}`,`🕐 ${state.ba.label}`,isHotel?`🛏 ${state.rooms} rooms`:`📐 ${state.sz.toLocaleString()} sq ft`,showC()&&showH()?"⚙️ Chiller + Hot Water":showC()?"❄️ Chiller":"🔥 Hot Water"].filter(Boolean).forEach(t=>{
+    pills.appendChild(el("span",{class:"pill"},t));
+  });
+  binfo.appendChild(pills);
+  brow.appendChild(binfo);
+  const nb=el("button",{style:"font-size:12px;color:#0F6E56;background:transparent;border:none;cursor:pointer;text-decoration:underline;",onClick:()=>setState({step:"inputs"})},"+New calculation");
+  brow.appendChild(nb);
+  banner.appendChild(brow);
+  frag.appendChild(banner);
+
+  // Combined
+  if(showC()&&showH()){
+    const cb=el("div",{style:"border-radius:10px;padding:20px;margin-bottom:16px;background:linear-gradient(135deg,#EBF5FF 0%,#FEF0EB 100%);border:1px solid #ddd;"});
+    cb.appendChild(el("p",{style:"font-size:11px;font-weight:700;color:#7A7975;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;"},"Combined Savings — Chiller + Hot Water System"));
+    const cg=el("div",{class:"grid2",style:"margin-bottom:12px;"});
+    cg.appendChild(statCard("Total Monthly Savings",`RM ${fmt(totM())}`,"per month","#EA6C1A","rgba(255,255,255,0.7)"));
+    cg.appendChild(statCard("Total 10-Year Savings",`RM ${fmt(tot10())}`,"cumulative","#EA6C1A","rgba(255,255,255,0.7)"));
+    cb.appendChild(cg);
+    const cesg=esgBlock(totCO2M(),totCO2_10());
+    cesg.style.background="rgba(255,255,255,0.55)";cesg.style.border="0.5px solid #ccc";
+    cb.appendChild(cesg);
+    frag.appendChild(cb);
+  }
+
+  // Chiller
+  if(showC()){
+    const cc=el("div",{style:"background:#EBF5FF;border:1px solid rgba(61,157,212,0.25);border-radius:10px;padding:20px;margin-bottom:16px;"});
+    const ch=el("div",{class:"sec-hdr",style:"background:rgba(29,111,164,0.1);"});
+    ch.appendChild(el("span",{},"❄️"));ch.appendChild(el("p",{style:"font-size:15px;font-weight:700;color:#1D6FA4;margin:0;"},"INTRIX ONE CHILLER"));
+    cc.appendChild(ch);
+    const cg=el("div",{class:"gridf",style:"margin-bottom:10px;"});
+    cg.appendChild(statCard("Monthly Savings",`RM ${fmt(cR.save)}`,"per month","#1D6FA4"));
+    cg.appendChild(statCard("10-Year Savings",`RM ${fmt(cR.s10)}`,"cumulative","#1D6FA4"));
+    cg.appendChild(statCard("Efficiency Gain",`${fmtD(((state.ba.kwrt-IKW)/state.ba.kwrt)*100)}%`,"kW/RT reduction","#1D6FA4"));
+    cc.appendChild(cg);
+    const cg2=el("div",{class:"grid2",style:"margin-bottom:10px;"});
+    cg2.appendChild(statCard("Existing Chiller — Est. Monthly Operational Cost",`RM ${fmt(cR.eM)}`,null,"#7A7975"));
+    cg2.appendChild(statCard("INTRIX ONE CHILLER — Est. Monthly Operational Cost",`RM ${fmt(cR.iM)}`,null,"#1D6FA4"));
+    cc.appendChild(cg2);
+    const chartCard=el("div",{style:"background:#fff;border-radius:6px;padding:16px;margin-bottom:10px;"});
+    chartCard.appendChild(el("p",{style:"font-size:13px;font-weight:600;color:#0D3F5E;margin-bottom:2px;"},"10-Year Cost Comparison — Chiller"));
+    chartCard.appendChild(el("p",{style:"font-size:11px;color:#7A7975;margin-bottom:8px;"},"Total cost over 10 years (RM)"));
+    chartCard.appendChild(miniChart("chart-c",[{name:"Existing",val:Math.round(cR.eM*M10)},{name:"INTRIX CHILLER",val:Math.round(cR.iM*M10)}],"#1D6FA4"));
+    cc.appendChild(chartCard);
+    cc.appendChild(esgBlock(cR.co2,cR.co2_10));
+    frag.appendChild(cc);
+  }
+
+  // Heat Pump
+  if(showH()){
+    const hc=el("div",{style:"background:#FEF0EB;border:1px solid rgba(232,114,58,0.25);border-radius:10px;padding:20px;margin-bottom:16px;"});
+    const hh=el("div",{class:"sec-hdr",style:"background:rgba(217,79,43,0.1);"});
+    hh.appendChild(el("span",{},"🔥"));hh.appendChild(el("p",{style:"font-size:15px;font-weight:700;color:#D94F2B;margin:0;"},"INTRIX ONE HEAT PUMP"));
+    hc.appendChild(hh);
+    const hg=el("div",{class:"grid2",style:"margin-bottom:10px;"});
+    hg.appendChild(statCard("Monthly Savings",`RM ${fmt(hR.save)}`,"per month","#D94F2B"));
+    hg.appendChild(statCard("10-Year Savings",`RM ${fmt(hR.s10)}`,"cumulative","#D94F2B"));
+    hc.appendChild(hg);
+    const hg2=el("div",{class:"grid2",style:"margin-bottom:10px;"});
+    hg2.appendChild(statCard("Existing System — Est. Monthly Operational Cost",`RM ${fmt(hR.eM)}`,null,"#7A7975"));
+    hg2.appendChild(statCard("INTRIX ONE HEAT PUMP — Est. Monthly Operational Cost",`RM ${fmt(hR.iM)}`,null,"#D94F2B"));
+    hc.appendChild(hg2);
+    const hChartCard=el("div",{style:"background:#fff;border-radius:6px;padding:16px;margin-bottom:10px;"});
+    hChartCard.appendChild(el("p",{style:"font-size:13px;font-weight:600;color:#8C2810;margin-bottom:2px;"},"10-Year Cost Comparison — Hot Water System"));
+    hChartCard.appendChild(el("p",{style:"font-size:11px;color:#7A7975;margin-bottom:8px;"},"Total cost over 10 years (RM)"));
+    hChartCard.appendChild(miniChart("chart-h",[{name:"Existing",val:Math.round(hR.eM*M10)},{name:"INTRIX HEAT PUMP",val:Math.round(hR.iM*M10)}],"#D94F2B"));
+    hc.appendChild(hChartCard);
+    hc.appendChild(esgBlock(hR.co2,hR.co2_10));
+    frag.appendChild(hc);
+  }
+
+  return frag;
+}
+
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  if(state.step==="inputs") app.appendChild(renderInputs());
+  else if(state.step==="gate") app.appendChild(renderGate());
+  else if(state.step==="results"){
+    const frag=renderResults();
+    app.appendChild(frag);
+  }
+}
+
+render();
+</script>
+</body>
+</html>
